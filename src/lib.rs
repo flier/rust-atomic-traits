@@ -61,9 +61,11 @@ pub trait Atomic {
     fn new(v: Self::Type) -> Self;
 
     /// Returns a mutable reference to the underlying type.
+    #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
     fn get_mut(&mut self) -> &mut Self::Type;
 
     /// Consumes the atomic and returns the contained value.
+    #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
     fn into_inner(self) -> Self::Type;
 
     /// Loads a value from the atomic type.
@@ -185,10 +187,12 @@ macro_rules! impl_atomic {
             Self::new(v)
         }
 
+        #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
         fn get_mut(&mut self) -> &mut Self::Type {
             Self::get_mut(self)
         }
 
+        #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
         fn into_inner(self) -> Self::Type {
             Self::into_inner(self)
         }

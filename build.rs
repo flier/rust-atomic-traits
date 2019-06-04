@@ -9,6 +9,10 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"since_1_10_0\""); // extended_compare_and_swap
     }
 
+    if version.semver >= Version::new(1, 15, 0) {
+        println!("cargo:rustc-cfg=feature=\"since_1_15_0\""); // atomic_access
+    }
+
     if version.semver >= Version::new(1, 27, 0) {
         println!("cargo:rustc-cfg=feature=\"since_1_27_0\""); // atomic_nand
     }
