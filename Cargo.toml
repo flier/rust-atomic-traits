@@ -1,0 +1,29 @@
+[package]
+name = "atomic-traits"
+version = "0.1.0"
+authors = ["Flier Lu <flier.lu@gmail.com>"]
+description = "The traits for generic atomic operations"
+documentation = "https://docs.rs/atomic-traits"
+homepage = "https://github.com/flier/rust-atomic-traits"
+keywords = ["atomic", "traits"]
+categories = ["algorithms", "no-std"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+edition = "2018"
+
+[features]
+default = []
+doc = []
+nightly = []
+
+[dependencies]
+cfg-if = "0.1"
+
+[build-dependencies]
+rustc_version = "0.2"
+
+[dev-dependencies]
+num-traits = "0.2"
+
+[package.metadata.docs.rs]
+features = ["doc"]
