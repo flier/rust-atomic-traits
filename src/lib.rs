@@ -1,5 +1,9 @@
 //! The traits for generic atomic operations
 //!
+//! # Compatibility
+//!
+//! The crate is tested for rustc 1.8 and greater.
+//!
 //! # Example
 //!
 //! ```
@@ -9,6 +13,7 @@
 //!
 //! use num_traits::One;
 //! use atomic_traits::{Atomic, NumOps, fetch};
+//! # use atomic_traits::fetch::{Add, Sub};
 //!
 //! #[derive(Debug, Default)]
 //! pub struct RefCnt<T>(T);

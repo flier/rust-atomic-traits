@@ -2,6 +2,10 @@
 
 The traits for generic atomic operations in Rust.
 
+## Compatibility
+
+The crate is tested for rustc 1.8 and greater.
+
 ## Usage
 
 Add this to your `Cargo.toml`:
