@@ -24,12 +24,11 @@ extern crate atomic_traits;
 ## Example
 
 ```rust
-use core::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use num_traits::One;
 use atomic_traits::{Atomic, NumOps, fetch};
 
-#[repr(transparent)]
 #[derive(Debug, Default)]
 pub struct RefCnt<T>(T);
 
@@ -51,7 +50,7 @@ where
     }
 }
 
-let refcnt = RefCnt::<AtomicU64>::default();
+let refcnt = RefCnt::<AtomicUsize>::default();
 
 assert_eq!(refcnt.inc(), 0);
 assert_eq!(refcnt.dec(), 1);
