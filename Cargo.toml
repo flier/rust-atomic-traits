@@ -18,7 +18,6 @@ nightly = []
 
 [dependencies]
 cfg-if = "0.1"
-select-rustc = "0.1"
 
 [build-dependencies]
 rustc_version = "0.2"

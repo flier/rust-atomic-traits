@@ -16,7 +16,7 @@ pub trait And {
 }
 
 /// Bitwise "nand" with the current value.
-#[rustc::since(1.27)]
+#[cfg(any(feature = "atomic_nand", feature = "since_1_27_0"))]
 pub trait Nand {
     /// The underlying type
     type Type;

@@ -5,12 +5,11 @@
 //! ```
 //! # extern crate num_traits;
 //! # extern crate atomic_traits;
-//! use core::sync::atomic::{AtomicU64, Ordering};
+//! use std::sync::atomic::{AtomicUsize, Ordering};
 //!
 //! use num_traits::One;
 //! use atomic_traits::{Atomic, NumOps, fetch};
 //!
-//! #[repr(transparent)]
 //! #[derive(Debug, Default)]
 //! pub struct RefCnt<T>(T);
 //!
@@ -32,11 +31,13 @@
 //!     }
 //! }
 //!
-//! let refcnt = RefCnt::<AtomicU64>::default();
+//! # fn main() {
+//! let refcnt = RefCnt::<AtomicUsize>::default();
 //!
 //! assert_eq!(refcnt.inc(), 0);
 //! assert_eq!(refcnt.dec(), 1);
 //! assert_eq!(refcnt.val(), 0);
+//! # }
 //! ```
 #![no_std]
 #![deny(missing_docs)]
@@ -84,7 +85,7 @@ pub trait Atomic {
     ///
     /// The return value is a result indicating whether the new value was written and containing the previous value.
     /// On success this value is guaranteed to be equal to `current`.
-    #[rustc::since(1.10)]
+    #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
     fn compare_exchange(
         &self,
         current: Self::Type,
@@ -98,7 +99,7 @@ pub trait Atomic {
     /// Unlike `compare_exchange`, this function is allowed to spuriously fail even when the comparison succeeds,
     /// which can result in more efficient code on some platforms.
     /// The return value is a result indicating whether the new value was written and containing the previous value.
-    #[rustc::since(1.10)]
+    #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
     fn compare_exchange_weak(
         &self,
         current: Self::Type,
@@ -108,14 +109,27 @@ pub trait Atomic {
     ) -> Result<Self::Type, Self::Type>;
 }
 
-/// The trait for types implementing atomic bitwise operations
-pub trait Bitwise:
-    Atomic
-    + fetch::And<Type = <Self as Atomic>::Type>
-    + fetch::Nand<Type = <Self as Atomic>::Type>
-    + fetch::Or<Type = <Self as Atomic>::Type>
-    + fetch::Xor<Type = <Self as Atomic>::Type>
-{
+cfg_if! {
+    if #[cfg(any(feature = "atomic_nand", feature = "since_1_27_0"))] {
+        /// The trait for types implementing atomic bitwise operations
+        pub trait Bitwise:
+            Atomic
+            + fetch::And<Type = <Self as Atomic>::Type>
+            + fetch::Nand<Type = <Self as Atomic>::Type>
+            + fetch::Or<Type = <Self as Atomic>::Type>
+            + fetch::Xor<Type = <Self as Atomic>::Type>
+        {
+        }
+    } else {
+        /// The trait for types implementing atomic bitwise operations
+        pub trait Bitwise:
+            Atomic
+            + fetch::And<Type = <Self as Atomic>::Type>
+            + fetch::Or<Type = <Self as Atomic>::Type>
+            + fetch::Xor<Type = <Self as Atomic>::Type>
+        {
+        }
+    }
 }
 
 cfg_if! {
@@ -200,7 +214,7 @@ macro_rules! impl_atomic {
             Self::compare_and_swap(self, current, new, order)
         }
 
-        #[rustc::since(1.10)]
+        #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
         fn compare_exchange(
             &self,
             current: Self::Type,
@@ -211,7 +225,7 @@ macro_rules! impl_atomic {
             Self::compare_exchange(self, current, new, success, failure)
         }
 
-        #[rustc::since(1.10)]
+        #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
         fn compare_exchange_weak(
             &self,
             current: Self::Type,
@@ -234,7 +248,7 @@ macro_rules! impl_atomic {
             }
         }
 
-        #[rustc::since(1.27)]
+        #[cfg(any(feature = "atomic_nand", feature = "since_1_27_0"))]
         impl $crate::fetch::Nand for $atomic {
             type Type = $primitive;
 
@@ -317,17 +331,19 @@ macro_rules! impl_atomic {
 }
 
 impl_atomic!(AtomicBool: bool; bitwise);
-
-impl_atomic!(AtomicI8: i8; bitwise, numops);
-impl_atomic!(AtomicI16: i16; bitwise, numops);
-impl_atomic!(AtomicI32: i32; bitwise, numops);
-impl_atomic!(AtomicI64: i64; bitwise, numops);
 impl_atomic!(AtomicIsize: isize; bitwise, numops);
-
-impl_atomic!(AtomicU8: u8; bitwise, numops);
-impl_atomic!(AtomicU16: u16; bitwise, numops);
-impl_atomic!(AtomicU32: u32; bitwise, numops);
-impl_atomic!(AtomicU64: u64; bitwise, numops);
 impl_atomic!(AtomicUsize: usize; bitwise, numops);
-
 impl_atomic!(AtomicPtr<T>);
+
+cfg_if! {
+    if #[cfg(any(feature = "integer_atomics", feature = "since_1_34_0"))] {
+        impl_atomic!(AtomicI8: i8; bitwise, numops);
+        impl_atomic!(AtomicI16: i16; bitwise, numops);
+        impl_atomic!(AtomicI32: i32; bitwise, numops);
+        impl_atomic!(AtomicI64: i64; bitwise, numops);
+        impl_atomic!(AtomicU8: u8; bitwise, numops);
+        impl_atomic!(AtomicU16: u16; bitwise, numops);
+        impl_atomic!(AtomicU32: u32; bitwise, numops);
+        impl_atomic!(AtomicU64: u64; bitwise, numops);
+    }
+}
