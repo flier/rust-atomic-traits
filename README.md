@@ -1,4 +1,4 @@
-# atomic-traits [![crate](https://img.shields.io/crates/v/atomic-traits.svg)](https://crates.io/crates/atomic-traits) [![documentation](https://docs.rs/atomic-traits/badge.svg)](https://docs.rs/atomic-traits) ![minimum rustc 1.8](https://img.shields.io/badge/rustc-1.8+-red.svg) [![Travis status](https://travis-ci.org/flier/rust-atomic-traits.svg?branch=master)](https://travis-ci.org/flier/rust-atomic-traits)
+# atomic-traits [![crate](https://img.shields.io/crates/v/atomic-traits.svg)](https://crates.io/crates/atomic-traits) [![documentation](https://docs.rs/atomic-traits/badge.svg)](https://docs.rs/atomic-traits/) ![minimum rustc 1.8](https://img.shields.io/badge/rustc-1.8+-red.svg) [![Travis status](https://travis-ci.org/flier/rust-atomic-traits.svg?branch=master)](https://travis-ci.org/flier/rust-atomic-traits)
 
 The traits for generic atomic operations in Rust.
 
