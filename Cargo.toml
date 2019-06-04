@@ -9,7 +9,6 @@ keywords = ["atomic", "traits"]
 categories = ["algorithms", "no-std"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
-edition = "2018"
 
 [features]
 default = []

@@ -335,15 +335,16 @@ impl_atomic!(AtomicIsize: isize; bitwise, numops);
 impl_atomic!(AtomicUsize: usize; bitwise, numops);
 impl_atomic!(AtomicPtr<T>);
 
-cfg_if! {
-    if #[cfg(any(feature = "integer_atomics", feature = "since_1_34_0"))] {
-        impl_atomic!(AtomicI8: i8; bitwise, numops);
-        impl_atomic!(AtomicI16: i16; bitwise, numops);
-        impl_atomic!(AtomicI32: i32; bitwise, numops);
-        impl_atomic!(AtomicI64: i64; bitwise, numops);
-        impl_atomic!(AtomicU8: u8; bitwise, numops);
-        impl_atomic!(AtomicU16: u16; bitwise, numops);
-        impl_atomic!(AtomicU32: u32; bitwise, numops);
-        impl_atomic!(AtomicU64: u64; bitwise, numops);
-    }
+#[cfg(any(feature = "integer_atomics", feature = "since_1_34_0"))]
+mod integer_atomics{
+    use super::*;
+
+    impl_atomic!(AtomicI8: i8; bitwise, numops);
+    impl_atomic!(AtomicI16: i16; bitwise, numops);
+    impl_atomic!(AtomicI32: i32; bitwise, numops);
+    impl_atomic!(AtomicI64: i64; bitwise, numops);
+    impl_atomic!(AtomicU8: u8; bitwise, numops);
+    impl_atomic!(AtomicU16: u16; bitwise, numops);
+    impl_atomic!(AtomicU32: u32; bitwise, numops);
+    impl_atomic!(AtomicU64: u64; bitwise, numops);
 }
