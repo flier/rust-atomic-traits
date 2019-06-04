@@ -3,6 +3,8 @@
 //! # Example
 //!
 //! ```
+//! # extern crate num_traits;
+//! # extern crate atomic_traits;
 //! use core::sync::atomic::{AtomicU64, Ordering};
 //!
 //! use num_traits::One;
@@ -82,6 +84,7 @@ pub trait Atomic {
     ///
     /// The return value is a result indicating whether the new value was written and containing the previous value.
     /// On success this value is guaranteed to be equal to `current`.
+    #[rustc::since(1.10)]
     fn compare_exchange(
         &self,
         current: Self::Type,
@@ -95,6 +98,7 @@ pub trait Atomic {
     /// Unlike `compare_exchange`, this function is allowed to spuriously fail even when the comparison succeeds,
     /// which can result in more efficient code on some platforms.
     /// The return value is a result indicating whether the new value was written and containing the previous value.
+    #[rustc::since(1.10)]
     fn compare_exchange_weak(
         &self,
         current: Self::Type,
@@ -196,6 +200,7 @@ macro_rules! impl_atomic {
             Self::compare_and_swap(self, current, new, order)
         }
 
+        #[rustc::since(1.10)]
         fn compare_exchange(
             &self,
             current: Self::Type,
@@ -206,6 +211,7 @@ macro_rules! impl_atomic {
             Self::compare_exchange(self, current, new, success, failure)
         }
 
+        #[rustc::since(1.10)]
         fn compare_exchange_weak(
             &self,
             current: Self::Type,
@@ -228,6 +234,7 @@ macro_rules! impl_atomic {
             }
         }
 
+        #[rustc::since(1.27)]
         impl $crate::fetch::Nand for $atomic {
             type Type = $primitive;
 

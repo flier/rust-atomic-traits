@@ -16,6 +16,7 @@ pub trait And {
 }
 
 /// Bitwise "nand" with the current value.
+#[rustc::since(1.27)]
 pub trait Nand {
     /// The underlying type
     type Type;
