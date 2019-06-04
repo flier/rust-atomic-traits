@@ -15,6 +15,9 @@ default = []
 doc = []
 nightly = []
 
+[badges]
+travis-ci = { repository = "flier/rust-atomic-traits", branch = "master" }
+
 [dependencies]
 cfg-if = "0.1"
 
