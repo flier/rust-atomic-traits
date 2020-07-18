@@ -1,6 +1,6 @@
 extern crate rustc_version;
 
-use rustc_version::{version_meta, Channel, Version};
+use rustc_version::{version_meta, Version};
 
 fn main() {
     let version = version_meta().unwrap();
@@ -21,7 +21,7 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"since_1_34_0\""); // integer_atomics
     }
 
-    if version.channel == Channel::Nightly {
-        println!("cargo:rustc-cfg=feature=\"nightly\"");
+    if version.semver >= Version::new(1, 45, 0) {
+        println!("cargo:rustc-cfg=feature=\"since_1_45_0\""); // update, min, max
     }
 }

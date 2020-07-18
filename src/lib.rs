@@ -46,9 +46,6 @@
 //! ```
 #![no_std]
 #![deny(missing_docs)]
-#![cfg_attr(feature = "nightly", feature(no_more_cas))]
-#![cfg_attr(feature = "nightly", feature(atomic_min_max))]
-#![cfg_attr(feature = "nightly", feature(integer_atomics))]
 
 #[macro_use]
 extern crate cfg_if;
@@ -140,7 +137,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(feature = "nightly", feature = "doc"))] {
+    if #[cfg(any(feature = "since_1_45_0"))] {
         /// The trait for types implementing atomic numeric operations
         pub trait NumOps:
             Atomic
@@ -303,19 +300,19 @@ macro_rules! impl_atomic {
         }
 
         cfg_if! {
-            if #[cfg(any(feature = "nightly", feature = "doc"))] {
+            if #[cfg(any(feature = "since_1_45_0"))] {
                 impl $crate::fetch::Update for $atomic {
                     type Type = $primitive;
 
                     fn fetch_update<F>(
                         &self,
-                        f: F,
                         fetch_order: Ordering,
                         set_order: Ordering,
+                        f: F,
                     ) -> Result<Self::Type, Self::Type>
                     where
                         F: FnMut(Self::Type) -> Option<Self::Type> {
-                        Self::fetch_update(self, f, fetch_order, set_order)
+                        Self::fetch_update(self, fetch_order, set_order, f)
                     }
                 }
 
@@ -345,7 +342,7 @@ impl_atomic!(AtomicUsize: usize; bitwise, numops);
 impl_atomic!(AtomicPtr<T>);
 
 #[cfg(any(feature = "integer_atomics", feature = "since_1_34_0"))]
-mod integer_atomics{
+mod integer_atomics {
     use super::*;
 
     impl_atomic!(AtomicI8: i8; bitwise, numops);
