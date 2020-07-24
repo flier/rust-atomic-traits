@@ -4,7 +4,7 @@ The traits for generic atomic operations in Rust.
 
 ## Compatibility
 
-The crate is tested for rustc 1.8 and greater.
+The crate is tested for stable and nightly compiler.
 
 ## Usage
 
@@ -12,7 +12,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-atomic-traits = "0.1"
+atomic-traits = "0.2"
 ```
 
 and this to your crate root:
