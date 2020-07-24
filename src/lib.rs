@@ -111,6 +111,10 @@ pub trait Atomic {
         success: Ordering,
         failure: Ordering,
     ) -> Result<Self::Type, Self::Type>;
+
+    /// Returns a mutable pointer to the underlying integer.
+    #[cfg(feature = "atomic_mut_ptr")]
+    fn as_mut_ptr(&self) -> *mut usize;
 }
 
 cfg_if! {
@@ -249,6 +253,12 @@ macro_rules! impl_atomic {
             failure: Ordering,
         ) -> Result<Self::Type, Self::Type> {
             Self::compare_exchange_weak(self, current, new, success, failure)
+        }
+
+        #[cfg(feature = "atomic_mut_ptr")]
+        #[inline(always)]
+        fn as_mut_ptr(&self) -> *mut usize {
+            Self::as_mut_ptr(self)
         }
     };
 
