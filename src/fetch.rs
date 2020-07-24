@@ -81,7 +81,7 @@ pub trait Sub {
 }
 
 cfg_if! {
-    if #[cfg(any(feature = "nightly", feature = "doc"))] {
+    if #[cfg(any(feature = "since_1_45_0"))] {
         /// Fetches the value, and applies a function to it that returns an optional new value.
         pub trait Update {
             /// The underlying type
@@ -92,9 +92,9 @@ cfg_if! {
             /// Returns a `Result` of `Ok(previous_value)` if the function returned `Some(_)`, else `Err(previous_value)`.
             fn fetch_update<F>(
                 &self,
-                f: F,
                 fetch_order: Ordering,
                 set_order: Ordering,
+                f: F,
             ) -> Result<Self::Type, Self::Type>
             where
                 F: FnMut(Self::Type) -> Option<Self::Type>;
