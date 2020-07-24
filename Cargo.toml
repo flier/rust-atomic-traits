@@ -10,9 +10,6 @@ categories = ["algorithms", "no-std"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
 
-[features]
-default = []
-
 [badges]
 travis-ci = { repository = "flier/rust-atomic-traits", branch = "master" }
 
