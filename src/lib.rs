@@ -185,32 +185,39 @@ macro_rules! impl_atomic {
     };
 
     (__impl atomic_methods $atomic:ident) => {
+        #[inline(always)]
         fn new(v: Self::Type) -> Self {
             Self::new(v)
         }
 
         #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
+        #[inline(always)]
         fn get_mut(&mut self) -> &mut Self::Type {
             Self::get_mut(self)
         }
 
         #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
+        #[inline(always)]
         fn into_inner(self) -> Self::Type {
             Self::into_inner(self)
         }
 
+        #[inline(always)]
         fn load(&self, order: Ordering) -> Self::Type {
             Self::load(self, order)
         }
 
+        #[inline(always)]
         fn store(&self, val: Self::Type, order: Ordering) {
             Self::store(self, val, order)
         }
 
+        #[inline(always)]
         fn swap(&self, val: Self::Type, order: Ordering) -> Self::Type {
             Self::swap(self, val, order)
         }
 
+        #[inline(always)]
         fn compare_and_swap(
             &self,
             current: Self::Type,
@@ -221,6 +228,7 @@ macro_rules! impl_atomic {
         }
 
         #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
+        #[inline(always)]
         fn compare_exchange(
             &self,
             current: Self::Type,
@@ -232,6 +240,7 @@ macro_rules! impl_atomic {
         }
 
         #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
+        #[inline(always)]
         fn compare_exchange_weak(
             &self,
             current: Self::Type,
@@ -249,6 +258,7 @@ macro_rules! impl_atomic {
         impl $crate::fetch::And for $atomic {
             type Type = $primitive;
 
+            #[inline(always)]
             fn fetch_and(&self, val: Self::Type, order: Ordering) -> Self::Type {
                 Self::fetch_and(self, val, order)
             }
@@ -258,6 +268,7 @@ macro_rules! impl_atomic {
         impl $crate::fetch::Nand for $atomic {
             type Type = $primitive;
 
+            #[inline(always)]
             fn fetch_nand(&self, val: Self::Type, order: Ordering) -> Self::Type {
                 Self::fetch_nand(self, val, order)
             }
@@ -266,6 +277,7 @@ macro_rules! impl_atomic {
         impl $crate::fetch::Or for $atomic {
             type Type = $primitive;
 
+            #[inline(always)]
             fn fetch_or(&self, val: Self::Type, order: Ordering) -> Self::Type {
                 Self::fetch_or(self, val, order)
             }
@@ -274,6 +286,7 @@ macro_rules! impl_atomic {
         impl $crate::fetch::Xor for $atomic {
             type Type = $primitive;
 
+            #[inline(always)]
             fn fetch_xor(&self, val: Self::Type, order: Ordering) -> Self::Type {
                 Self::fetch_xor(self, val, order)
             }
@@ -286,6 +299,7 @@ macro_rules! impl_atomic {
         impl $crate::fetch::Add for $atomic {
             type Type = $primitive;
 
+            #[inline(always)]
             fn fetch_add(&self, val: Self::Type, order: Ordering) -> Self::Type {
                 Self::fetch_add(self, val, order)
             }
@@ -294,6 +308,7 @@ macro_rules! impl_atomic {
         impl $crate::fetch::Sub for $atomic {
             type Type = $primitive;
 
+            #[inline(always)]
             fn fetch_sub(&self, val: Self::Type, order: Ordering) -> Self::Type {
                 Self::fetch_sub(self, val, order)
             }
@@ -304,6 +319,7 @@ macro_rules! impl_atomic {
                 impl $crate::fetch::Update for $atomic {
                     type Type = $primitive;
 
+                    #[inline(always)]
                     fn fetch_update<F>(
                         &self,
                         fetch_order: Ordering,
@@ -319,6 +335,7 @@ macro_rules! impl_atomic {
                 impl $crate::fetch::Max for $atomic {
                     type Type = $primitive;
 
+                    #[inline(always)]
                     fn fetch_max(&self, val: Self::Type, order: Ordering) -> Self::Type {
                         Self::fetch_max(self, val, order)
                     }
@@ -327,6 +344,7 @@ macro_rules! impl_atomic {
                 impl $crate::fetch::Min for $atomic {
                     type Type = $primitive;
 
+                    #[inline(always)]
                     fn fetch_min(&self, val: Self::Type, order: Ordering) -> Self::Type {
                         Self::fetch_min(self, val, order)
                     }
