@@ -1,6 +1,6 @@
 [package]
 name = "atomic-traits"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Flier Lu <flier.lu@gmail.com>"]
 description = "The traits for generic atomic operations"
 documentation = "https://docs.rs/atomic-traits"
@@ -14,10 +14,10 @@ readme = "README.md"
 travis-ci = { repository = "flier/rust-atomic-traits", branch = "master" }
 
 [dependencies]
-cfg-if = "0.1"
+cfg-if = "1"
 
 [build-dependencies]
-rustc_version = "0.2"
+rustc_version = "0.3"
 
 [dev-dependencies]
 num-traits = "0.2"
