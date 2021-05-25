@@ -12,7 +12,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-atomic-traits = "0.2"
+atomic-traits = "0.3"
 ```
 
 and this to your crate root:
