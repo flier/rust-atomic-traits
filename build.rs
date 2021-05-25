@@ -24,4 +24,8 @@ fn main() {
     if version.semver >= Version::new(1, 45, 0) {
         println!("cargo:rustc-cfg=feature=\"since_1_45_0\""); // update, min, max
     }
+
+    if version.semver >= Version::new(1, 50, 0) {
+        println!("cargo:rustc-cfg=feature=\"since_1_50_0\""); // extended_compare_and_swap deprecated
+    }
 }

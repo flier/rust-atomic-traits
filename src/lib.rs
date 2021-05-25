@@ -82,6 +82,10 @@ pub trait Atomic {
     /// Stores a value into the atomic type if the current value is the same as the `current` value.
     ///
     /// The return value is always the previous value. If it is equal to `current`, then the value was updated.
+    #[cfg_attr(
+        feature = "since_1_50_0",
+        deprecated = "Use `compare_exchange` or `compare_exchange_weak` instead"
+    )]
     fn compare_and_swap(&self, current: Self::Type, new: Self::Type, order: Ordering)
         -> Self::Type;
 
@@ -228,6 +232,7 @@ macro_rules! impl_atomic {
             new: Self::Type,
             order: Ordering,
         ) -> Self::Type {
+            #[cfg_attr(feature = "since_1_50_0", allow(deprecated))]
             Self::compare_and_swap(self, current, new, order)
         }
 
