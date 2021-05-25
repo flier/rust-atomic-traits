@@ -1,10 +1,12 @@
-# atomic-traits [![crate](https://img.shields.io/crates/v/atomic-traits.svg)](https://crates.io/crates/atomic-traits) [![documentation](https://docs.rs/atomic-traits/badge.svg)](https://docs.rs/atomic-traits/) [![Travis status](https://travis-ci.org/flier/rust-atomic-traits.svg?branch=master)](https://travis-ci.org/flier/rust-atomic-traits)
+# atomic-traits [![crate](https://img.shields.io/crates/v/atomic-traits.svg)](https://crates.io/crates/atomic-traits) [![documentation](https://docs.rs/atomic-traits/badge.svg)](https://docs.rs/atomic-traits/) [![Travis status](https://travis-ci.org/flier/rust-atomic-traits.svg?branch=master)](https://travis-ci.org/flier/rust-atomic-traits) [![MSRV](https://img.shields.io/badge/MSRV-1.32.0-green)](https://blog.rust-lang.org/2019/01/17/Rust-1.32.0.html)
 
 The traits for generic atomic operations in Rust.
 
 ## Compatibility
 
 The crate is tested for stable and nightly compiler.
+
+Current MSRV is `1.32.0`.
 
 ## Usage
 
