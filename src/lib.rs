@@ -379,11 +379,25 @@ mod integer_atomics {
     use super::*;
 
     impl_atomic!(AtomicI8: i8; bitwise, numops);
-    impl_atomic!(AtomicI16: i16; bitwise, numops);
-    impl_atomic!(AtomicI32: i32; bitwise, numops);
-    impl_atomic!(AtomicI64: i64; bitwise, numops);
     impl_atomic!(AtomicU8: u8; bitwise, numops);
+
+    #[cfg(any(target_pointer_width = "16", target_pointer_width = "32",
+              target_pointer_width = "64"))]
+    impl_atomic!(AtomicI16: i16; bitwise, numops);
+
+    #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+    impl_atomic!(AtomicI32: i32; bitwise, numops);
+
+    #[cfg(target_pointer_width = "64")]
+    impl_atomic!(AtomicI64: i64; bitwise, numops);
+
+    #[cfg(any(target_pointer_width = "16", target_pointer_width = "32",
+              target_pointer_width = "64"))]
     impl_atomic!(AtomicU16: u16; bitwise, numops);
+
+    #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
     impl_atomic!(AtomicU32: u32; bitwise, numops);
+
+    #[cfg(target_pointer_width = "64")]
     impl_atomic!(AtomicU64: u64; bitwise, numops);
 }
