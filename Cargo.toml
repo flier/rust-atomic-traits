@@ -17,7 +17,7 @@ travis-ci = { repository = "flier/rust-atomic-traits", branch = "master" }
 cfg-if = "1"
 
 [build-dependencies]
-rustc_version = "0.3"
+rustc_version = "0.4"
 
 [dev-dependencies]
 num-traits = "0.2"
