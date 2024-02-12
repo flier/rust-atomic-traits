@@ -26,6 +26,8 @@ extern crate atomic_traits;
 ## Example
 
 ```rust
+# extern crate num_traits;
+# extern crate atomic_traits;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use num_traits::One;

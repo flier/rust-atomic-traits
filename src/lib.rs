@@ -52,6 +52,16 @@
 #[macro_use]
 extern crate cfg_if;
 
+cfg_if! {
+    if #[cfg(doctest)] {
+        #[macro_use]
+        extern crate doc_comment;
+
+        #[cfg(doctest)]
+        doc_comment!(include_str!("../README.md"));
+    }
+}
+
 use core::sync::atomic::*;
 
 pub mod fetch;
