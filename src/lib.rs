@@ -47,6 +47,7 @@
 #![no_std]
 #![deny(missing_docs)]
 #![cfg_attr(feature = "atomic_bool_fetch_not", feature(atomic_bool_fetch_not))]
+#![cfg_attr(feature = "atomic_from_mut", feature(atomic_from_mut))]
 
 #[macro_use]
 extern crate cfg_if;
@@ -253,27 +254,6 @@ pub trait Atomic {
         success: Ordering,
         failure: Ordering,
     ) -> Result<Self::Type, Self::Type>;
-
-    /// Returns a mutable pointer to the underlying type.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore (extern-declaration)
-    /// # fn main() {
-    /// use std::sync::atomic::AtomicBool;
-    /// use atomic_traits::Atomic;
-    ///
-    /// extern "C" {
-    ///     fn my_atomic_op(arg: *mut bool);
-    /// }
-    ///
-    /// let mut atomic = AtomicBool::new(true);
-    /// unsafe {
-    ///     my_atomic_op(Atomic::as_ptr(&atomic));
-    /// }
-    /// # }
-    #[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
-    fn as_ptr(&self) -> *mut Self::Type;
 }
 
 cfg_if! {
@@ -327,6 +307,102 @@ cfg_if! {
         {
         }
     }
+}
+
+/// Returns a mutable pointer to the underlying type.
+#[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
+pub trait AsPtr: Atomic {
+    /// Returns a mutable pointer to the underlying type.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore (extern-declaration)
+    /// # fn main() {
+    /// use std::sync::atomic::AtomicBool;
+    /// use atomic_traits::Atomic;
+    ///
+    /// extern "C" {
+    ///     fn my_atomic_op(arg: *mut bool);
+    /// }
+    ///
+    /// let mut atomic = AtomicBool::new(true);
+    /// unsafe {
+    ///     my_atomic_op(Atomic::as_ptr(&atomic));
+    /// }
+    /// # }    
+    fn as_ptr(&self) -> *mut Self::Type;
+}
+
+#[cfg(feature = "atomic_from_mut")]
+/// Get atomic access to mutable atomic type or slice.
+pub trait FromMut: Atomic
+where
+    Self: Sized,
+{
+    /// Get atomic access to an atomic type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #![feature(atomic_from_mut)]
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let mut some_bool = true;
+    /// let a = <AtomicBool as Atomic>::from_mut(&mut some_bool);
+    /// Atomic::store(&a, false, Ordering::Relaxed);
+    /// assert_eq!(some_bool, false);
+    /// ```    
+    fn from_mut(v: &mut Self::Type) -> &mut Self;
+
+    /// Get atomic access to a `&mut [Self::Type]` slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #![feature(atomic_from_mut)]
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    ///
+    /// let mut some_bools = [false; 10];
+    /// let a = &*AtomicBool::from_mut_slice(&mut some_bools);
+    /// std::thread::scope(|s| {
+    ///     for i in 0..a.len() {
+    ///         s.spawn(move || a[i].store(true, Ordering::Relaxed));
+    ///     }
+    /// });
+    /// assert_eq!(some_bools, [true; 10]);
+    /// ```    
+    fn from_mut_slice(v: &mut [Self::Type]) -> &mut [Self];
+
+    /// Get non-atomic access to a `&mut [Self]` slice.
+    ///
+    /// This is safe because the mutable reference guarantees that no other threads are
+    /// concurrently accessing the atomic data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #![feature(atomic_from_mut, inline_const)]
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let mut some_bools = [const { AtomicBool::new(false) }; 10];
+    ///
+    /// let view: &mut [bool] = <AtomicBool as Atomic>::get_mut_slice(&mut some_bools);
+    /// assert_eq!(view, [false; 10]);
+    /// view[..5].copy_from_slice(&[true; 5]);
+    ///
+    /// std::thread::scope(|s| {
+    ///     for t in &some_bools[..5] {
+    ///         s.spawn(move || assert_eq!(t.load(Ordering::Relaxed), true));
+    ///     }
+    ///
+    ///     for f in &some_bools[5..] {
+    ///         s.spawn(move || assert_eq!(f.load(Ordering::Relaxed), false));
+    ///     }
+    /// });
+    /// ```    
+    fn get_mut_slice(this: &mut [Self]) -> &mut [Self::Type];
 }
 
 macro_rules! impl_atomic {
@@ -441,11 +517,6 @@ macro_rules! impl_atomic {
         ) -> Result<Self::Type, Self::Type> {
             Self::compare_exchange_weak(self, current, new, success, failure)
         }
-
-        #[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
-        fn as_ptr(&self) -> *mut Self::Type {
-            Self::as_ptr(self)
-        }
     };
 
     (__impl bitwise $atomic:path : $primitive:ty) => {
@@ -460,7 +531,7 @@ macro_rules! impl_atomic {
             }
         }
 
-        #[cfg(all(any(feature = "atomic_nand", feature = "since_1_27_0"), not(feature = "loom_atomics")))]
+        #[cfg(any(feature = "atomic_nand", feature = "since_1_27_0"))]
         impl $crate::fetch::Nand for $atomic {
             type Type = $primitive;
 
@@ -513,27 +584,7 @@ macro_rules! impl_atomic {
         #[cfg(any(feature = "since_1_45_0", feature = "loom_atomics"))]
         impl_atomic!(__impl fetch_update $atomic : $primitive);
 
-        cfg_if! {
-            if #[cfg(all(feature = "since_1_45_0", not(feature = "loom_atomics")))] {
-                impl $crate::fetch::Max for $atomic {
-                    type Type = $primitive;
-
-                    #[inline(always)]
-                    fn fetch_max(&self, val: Self::Type, order: Ordering) -> Self::Type {
-                        Self::fetch_max(self, val, order)
-                    }
-                }
-
-                impl $crate::fetch::Min for $atomic {
-                    type Type = $primitive;
-
-                    #[inline(always)]
-                    fn fetch_min(&self, val: Self::Type, order: Ordering) -> Self::Type {
-                        Self::fetch_min(self, val, order)
-                    }
-                }
-            }
-        }
+        impl_atomic!(__impl min_max $atomic : $primitive);
     };
 
     (__impl fetch_update $atomic:ident < $param:ident >) => {
@@ -577,8 +628,99 @@ macro_rules! impl_atomic {
         impl $crate::fetch::Not for $atomic {
             type Type = $primitive;
 
+            #[inline(always)]
             fn fetch_not(&self, order: Ordering) -> Self::Type {
                 Self::fetch_not(self, order)
+            }
+        }
+    };
+
+    (__impl min_max $atomic:path : $primitive:ty) => {
+        cfg_if! {
+            if #[cfg(any(feature = "atomic_min_max", feature = "since_1_45_0"))] {
+                impl $crate::fetch::Max for $atomic {
+                    type Type = $primitive;
+
+                    #[inline(always)]
+                    fn fetch_max(&self, val: Self::Type, order: Ordering) -> Self::Type {
+                        Self::fetch_max(self, val, order)
+                    }
+                }
+
+                impl $crate::fetch::Min for $atomic {
+                    type Type = $primitive;
+
+                    #[inline(always)]
+                    fn fetch_min(&self, val: Self::Type, order: Ordering) -> Self::Type {
+                        Self::fetch_min(self, val, order)
+                    }
+                }
+            }
+        }
+    };
+
+    (__impl as_ptr $atomic:path : $primitive:ty) => {
+        #[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
+        impl AsPtr for $atomic {
+            #[inline(always)]
+            fn as_ptr(&self) -> *mut Self::Type {
+                Self::as_ptr(&self)
+            }
+        }
+    };
+
+    (__impl as_ptr $atomic:ident < $param:ident >) => {
+        #[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
+        impl < $param > AsPtr for $atomic < $param > {
+            #[inline(always)]
+            fn as_ptr(&self) -> *mut Self::Type {
+                Self::as_ptr(&self)
+            }
+        }
+    };
+
+    (__impl from_mut $atomic:path : $primitive:ty) => {
+        #[cfg(feature = "atomic_from_mut")]
+        impl FromMut for $atomic
+        where
+            Self: Sized,
+        {
+            #[inline(always)]
+            fn from_mut(v: &mut Self::Type) -> &mut Self {
+                Self::from_mut(v)
+            }
+
+            #[inline(always)]
+            fn from_mut_slice(v: &mut [Self::Type]) -> &mut [Self] {
+                Self::from_mut_slice(v)
+            }
+
+            #[inline(always)]
+            fn get_mut_slice(this: &mut [Self]) -> &mut [Self::Type] {
+                Self::get_mut_slice(this)
+            }
+        }
+    };
+
+    (__impl from_mut $atomic:ident < $param:ident >) => {
+        #[cfg(feature = "atomic_from_mut")]
+        impl < $param > FromMut for $atomic < $param >
+        where
+            Self: Sized,
+        {
+            #[inline(always)]
+            fn from_mut(v: &mut Self::Type) -> &mut Self {
+                Self::from_mut(v)
+            }
+
+            #[inline(always)]
+            fn from_mut_slice(v: &mut [Self::Type]) -> &mut [Self] {
+                Self::from_mut_slice(v)
+            }
+
+            #[inline(always)]
+            fn get_mut_slice(this: &mut [Self]) -> &mut [Self::Type] {
+                Self::get_mut_slice(this)
             }
         }
     };
@@ -596,7 +738,7 @@ cfg_if! {
             )
         )
     ))] {
-        impl_atomic!(AtomicBool: bool; bitwise, fetch_not);
+        impl_atomic!(AtomicBool: bool; bitwise, fetch_not, as_ptr, from_mut);
 
         #[cfg(any(feature = "since_1_53_0", feature = "loom_atomics"))]
         impl_atomic!(__impl fetch_update AtomicBool : bool);
@@ -605,12 +747,14 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(any(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_has_atomic = "ptr"))] {
-        impl_atomic!(AtomicIsize: isize; bitwise, numops);
-        impl_atomic!(AtomicUsize: usize; bitwise, numops);
+        impl_atomic!(AtomicIsize: isize; bitwise, numops, as_ptr, from_mut);
+        impl_atomic!(AtomicUsize: usize; bitwise, numops, as_ptr, from_mut);
         impl_atomic!(AtomicPtr<T>);
 
         #[cfg(any(feature = "since_1_53_0", feature = "loom_atomics"))]
         impl_atomic!(__impl fetch_update AtomicPtr<T>);
+        impl_atomic!(__impl as_ptr AtomicPtr<T>);
+        impl_atomic!(__impl from_mut AtomicPtr<T>);
     }
 }
 
@@ -630,8 +774,8 @@ mod integer_atomics {
                 )
             )
         ))] {
-            impl_atomic!(AtomicI8: i8; bitwise, numops);
-            impl_atomic!(AtomicU8: u8; bitwise, numops);
+            impl_atomic!(AtomicI8: i8; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicU8: u8; bitwise, numops, as_ptr, from_mut);
         }
     }
 
@@ -647,8 +791,8 @@ mod integer_atomics {
                 )
             )
         ))] {
-            impl_atomic!(AtomicI16: i16; bitwise, numops);
-            impl_atomic!(AtomicU16: u16; bitwise, numops);
+            impl_atomic!(AtomicI16: i16; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicU16: u16; bitwise, numops, as_ptr, from_mut);
         }
     }
 
@@ -660,8 +804,8 @@ mod integer_atomics {
                 any(target_pointer_width = "32", target_pointer_width = "64")
             )
         ))] {
-            impl_atomic!(AtomicI32: i32; bitwise, numops);
-            impl_atomic!(AtomicU32: u32; bitwise, numops);
+            impl_atomic!(AtomicI32: i32; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicU32: u32; bitwise, numops, as_ptr, from_mut);
         }
     }
 
@@ -670,8 +814,8 @@ mod integer_atomics {
             all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "64"),
             all(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_pointer_width = "64")
         ))] {
-            impl_atomic!(AtomicI64: i64; bitwise, numops);
-            impl_atomic!(AtomicU64: u64; bitwise, numops);
+            impl_atomic!(AtomicI64: i64; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicU64: u64; bitwise, numops, as_ptr, from_mut);
         }
     }
 }
