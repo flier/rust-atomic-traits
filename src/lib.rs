@@ -470,6 +470,7 @@ macro_rules! impl_atomic {
             }
         }
 
+        #[cfg(any(feature = "since_1_45_0", feature = "loom_atomics"))]
         impl_atomic!(__impl fetch_update $atomic : $primitive);
 
         cfg_if! {
@@ -495,24 +496,38 @@ macro_rules! impl_atomic {
         }
     };
 
-    (__impl fetch_update $atomic:path : $primitive:ty) => {
-        cfg_if! {
-            if #[cfg(any(feature = "since_1_45_0", feature = "loom_atomics"))] {
-                impl $crate::fetch::Update for $atomic {
-                    type Type = $primitive;
+    (__impl fetch_update $atomic:ident < $param:ident >) => {
+        impl < $param > $crate::fetch::Update for $atomic < $param > {
+            type Type = *mut $param;
 
-                    #[inline(always)]
-                    fn fetch_update<F>(
-                        &self,
-                        fetch_order: Ordering,
-                        set_order: Ordering,
-                        f: F,
-                    ) -> Result<Self::Type, Self::Type>
-                    where
-                        F: FnMut(Self::Type) -> Option<Self::Type> {
-                        Self::fetch_update(self, fetch_order, set_order, f)
-                    }
-                }
+            #[inline(always)]
+            fn fetch_update<F>(
+                &self,
+                fetch_order: Ordering,
+                set_order: Ordering,
+                f: F,
+            ) -> Result<Self::Type, Self::Type>
+            where
+                F: FnMut(Self::Type) -> Option<Self::Type> {
+                Self::fetch_update(self, fetch_order, set_order, f)
+            }
+        }
+    };
+
+    (__impl fetch_update $atomic:path : $primitive:ty) => {
+        impl $crate::fetch::Update for $atomic {
+            type Type = $primitive;
+
+            #[inline(always)]
+            fn fetch_update<F>(
+                &self,
+                fetch_order: Ordering,
+                set_order: Ordering,
+                f: F,
+            ) -> Result<Self::Type, Self::Type>
+            where
+                F: FnMut(Self::Type) -> Option<Self::Type> {
+                Self::fetch_update(self, fetch_order, set_order, f)
             }
         }
     };
@@ -544,7 +559,10 @@ cfg_if! {
             )
         )
     ))] {
-        impl_atomic!(AtomicBool: bool; bitwise, fetch_update, fetch_not);
+        impl_atomic!(AtomicBool: bool; bitwise, fetch_not);
+
+        #[cfg(any(feature = "since_1_53_0", feature = "loom_atomics"))]
+        impl_atomic!(__impl fetch_update AtomicBool : bool);
     }
 }
 
@@ -553,6 +571,9 @@ cfg_if! {
         impl_atomic!(AtomicIsize: isize; bitwise, numops);
         impl_atomic!(AtomicUsize: usize; bitwise, numops);
         impl_atomic!(AtomicPtr<T>);
+
+        #[cfg(any(feature = "since_1_53_0", feature = "loom_atomics"))]
+        impl_atomic!(__impl fetch_update AtomicPtr<T>);
     }
 }
 
