@@ -2,7 +2,7 @@
 //!
 //! # Compatibility
 //!
-//! The crate is tested for rustc 1.8 and greater.
+//! The crate is tested for rustc 1.34 and greater.
 //!
 //! # Example
 //!
@@ -402,9 +402,9 @@ macro_rules! impl_atomic {
 
 cfg_if! {
     if #[cfg(any(
-        all(feature = "use_target_has_atomic", target_has_atomic = "8"),
+        all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "8"),
         all(
-            not(feature = "use_target_has_atomic"),
+            not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
             any(
                 target_pointer_width = "16",
                 target_pointer_width = "32",
@@ -417,7 +417,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(not(feature = "use_target_has_atomic"), target_has_atomic = "ptr"))] {
+    if #[cfg(any(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_has_atomic = "ptr"))] {
         impl_atomic!(AtomicIsize: isize; bitwise, numops);
         impl_atomic!(AtomicUsize: usize; bitwise, numops);
         impl_atomic!(AtomicPtr<T>);
@@ -430,9 +430,9 @@ mod integer_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "8"),
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "8"),
             all(
-                not(feature = "use_target_has_atomic"),
+                not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
                 any(
                     target_pointer_width = "16",
                     target_pointer_width = "32",
@@ -447,9 +447,9 @@ mod integer_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "16"),
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "16"),
             all(
-                not(feature = "use_target_has_atomic"),
+                not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
                 any(
                     target_pointer_width = "16",
                     target_pointer_width = "32",
@@ -464,9 +464,9 @@ mod integer_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "32"),
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "32"),
             all(
-                not(feature = "use_target_has_atomic"),
+                not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
                 any(target_pointer_width = "32", target_pointer_width = "64")
             )
         ))] {
@@ -477,8 +477,8 @@ mod integer_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "64"),
-            all(not(feature = "use_target_has_atomic"), target_pointer_width = "64")
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "64"),
+            all(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_pointer_width = "64")
         ))] {
             impl_atomic!(AtomicI64: i64; bitwise, numops);
             impl_atomic!(AtomicU64: u64; bitwise, numops);
@@ -494,9 +494,9 @@ mod loom_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "8"),
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "8"),
             all(
-                not(feature = "use_target_has_atomic"),
+                not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
                 any(
                     target_pointer_width = "16",
                     target_pointer_width = "32",
@@ -509,7 +509,7 @@ mod loom_atomics {
     }
 
     cfg_if! {
-        if #[cfg(any(not(feature = "use_target_has_atomic"), target_has_atomic = "ptr"))] {
+        if #[cfg(any(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_has_atomic = "ptr"))] {
             impl_atomic!(loom::sync::atomic::AtomicIsize: isize; bitwise, numops);
             impl_atomic!(loom::sync::atomic::AtomicUsize: usize; bitwise, numops);
 
@@ -519,9 +519,9 @@ mod loom_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "8"),
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "8"),
             all(
-                not(feature = "use_target_has_atomic"),
+                not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
                 any(
                     target_pointer_width = "16",
                     target_pointer_width = "32",
@@ -536,9 +536,9 @@ mod loom_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "16"),
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "16"),
             all(
-                not(feature = "use_target_has_atomic"),
+                not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
                 any(
                     target_pointer_width = "16",
                     target_pointer_width = "32",
@@ -553,9 +553,9 @@ mod loom_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "32"),
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "32"),
             all(
-                not(feature = "use_target_has_atomic"),
+                not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")),
                 any(target_pointer_width = "32", target_pointer_width = "64")
             )
         ))] {
@@ -566,8 +566,8 @@ mod loom_atomics {
 
     cfg_if! {
         if #[cfg(any(
-            all(feature = "use_target_has_atomic", target_has_atomic = "64"),
-            all(not(feature = "use_target_has_atomic"), target_pointer_width = "64")
+            all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "64"),
+            all(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_pointer_width = "64")
         ))] {
             impl_atomic!(loom::sync::atomic::AtomicI64: i64; bitwise, numops);
             impl_atomic!(loom::sync::atomic::AtomicU64: u64; bitwise, numops);

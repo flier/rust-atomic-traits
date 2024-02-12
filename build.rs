@@ -30,6 +30,10 @@ fn main() {
     }
 
     if version.semver >= Version::new(1, 60, 0) {
-        println!("cargo:rustc-cfg=feature=\"use_target_has_atomic\""); // target_has_atomic
+        println!("cargo:rustc-cfg=feature=\"since_1_60_0\""); // target_has_atomic
+    }
+
+    if version.semver >= Version::new(1, 70, 0) {
+        println!("cargo:rustc-cfg=feature=\"since_1_70_0\""); // atomic_as_ptr
     }
 }
