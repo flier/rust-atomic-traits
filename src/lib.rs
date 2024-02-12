@@ -46,6 +46,7 @@
 //! ```
 #![no_std]
 #![deny(missing_docs)]
+#![cfg_attr(feature = "atomic_bool_fetch_not", feature(atomic_bool_fetch_not))]
 
 #[macro_use]
 extern crate cfg_if;
@@ -413,6 +414,15 @@ cfg_if! {
         )
     ))] {
         impl_atomic!(AtomicBool: bool; bitwise);
+
+        #[cfg(feature = "atomic_bool_fetch_not")]
+        impl fetch::Not for AtomicBool {
+            type Type = bool;
+
+            fn fetch_not(&self, order: Ordering) -> Self::Type {
+                Self::fetch_not(self, order)
+            }
+        }
     }
 }
 

@@ -58,6 +58,33 @@ pub trait Xor {
     fn fetch_xor(&self, val: Self::Type, order: Ordering) -> Self::Type;
 }
 
+/// Logical "not" with a boolean value.
+#[cfg(feature = "atomic_bool_fetch_not")]
+pub trait Not {
+    /// The underlying type
+    type Type;
+
+    /// Logical "not" with a boolean value.
+    ///
+    /// Performs a logical "not" operation on the current value, and sets
+    /// the new value to the result.
+    ///
+    /// Returns the previous value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #![feature(atomic_bool_fetch_not)]
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::fetch;
+    ///
+    /// let foo = AtomicBool::new(true);
+    /// assert_eq!(fetch::Not::fetch_not(&foo, Ordering::SeqCst), true);
+    /// assert_eq!(foo.load(Ordering::SeqCst), false);
+    /// ```
+    fn fetch_not(&self, order: Ordering) -> Self::Type;
+}
+
 /// Adds to the current value, returning the previous value.
 pub trait Add {
     /// The underlying type
