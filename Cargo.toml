@@ -15,6 +15,7 @@ travis-ci = { repository = "flier/rust-atomic-traits", branch = "master" }
 
 [features]
 default = []
+integer_atomics = []
 loom_atomics = ["loom"]
 
 [dependencies]

@@ -28,4 +28,8 @@ fn main() {
     if version.semver >= Version::new(1, 50, 0) {
         println!("cargo:rustc-cfg=feature=\"since_1_50_0\""); // extended_compare_and_swap deprecated
     }
+
+    if version.semver >= Version::new(1, 60, 0) {
+        println!("cargo:rustc-cfg=feature=\"use_target_has_atomic\""); // extended_compare_and_swap deprecated
+    }
 }
