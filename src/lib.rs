@@ -378,12 +378,20 @@ impl_atomic!(AtomicPtr<T>);
 mod integer_atomics {
     use super::*;
 
+    #[cfg(target_has_atomic = "8")]
     impl_atomic!(AtomicI8: i8; bitwise, numops);
+    #[cfg(target_has_atomic = "16")]
     impl_atomic!(AtomicI16: i16; bitwise, numops);
+    #[cfg(target_has_atomic = "32")]
     impl_atomic!(AtomicI32: i32; bitwise, numops);
+    #[cfg(target_has_atomic = "64")]
     impl_atomic!(AtomicI64: i64; bitwise, numops);
+    #[cfg(target_has_atomic = "8")]
     impl_atomic!(AtomicU8: u8; bitwise, numops);
+    #[cfg(target_has_atomic = "16")]
     impl_atomic!(AtomicU16: u16; bitwise, numops);
+    #[cfg(target_has_atomic = "32")]
     impl_atomic!(AtomicU32: u32; bitwise, numops);
+    #[cfg(target_has_atomic = "64")]
     impl_atomic!(AtomicU64: u64; bitwise, numops);
 }
