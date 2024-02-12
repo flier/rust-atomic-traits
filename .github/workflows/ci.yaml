@@ -31,10 +31,7 @@ jobs:
           - --features loom_atomics
         include:
           - os: ubuntu-latest
-            rust: 1.32.0 # rustc-version MSRV
-            experimental: true
-          - os: ubuntu-latest
-            rust: 1.34.0
+            rust: 1.34.0 # rustc-version MSRV
             experimental: true
           - os: ubuntu-latest
             rust: 1.45.0

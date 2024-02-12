@@ -64,22 +64,6 @@ pub trait Atomic {
     /// Creates a new atomic type.
     fn new(v: Self::Type) -> Self;
 
-    /// Creates a new atomic type from a pointer.
-    ///     
-    /// # Safety
-    ///
-    /// * `ptr` must be aligned to `align_of::<Self>()` (note that on some platforms this can
-    ///   be bigger than `align_of::<Self::Type>()`).
-    /// * `ptr` must be [valid] for both reads and writes for the whole lifetime `'a`.
-    /// * You must adhere to the [Memory model for atomic accesses]. In particular, it is not
-    ///   allowed to mix atomic and non-atomic accesses, or atomic accesses of different sizes,
-    ///   without synchronization.
-    #[cfg(all(
-        any(feature = "atomic_from_ptr", feature = "since_1_75_0"),
-        not(feature = "loom_atomics")
-    ))]
-    unsafe fn from_ptr<'a>(ptr: *mut Self::Type) -> &'a Self;
-
     /// Returns a mutable reference to the underlying type.
     ///
     /// # Examples
@@ -333,6 +317,25 @@ pub trait AsPtr: Atomic {
     fn as_ptr(&self) -> *mut Self::Type;
 }
 
+/// Creates a new atomic type from a pointer.
+#[cfg(all(
+    any(feature = "atomic_from_ptr", feature = "since_1_75_0"),
+    not(feature = "loom_atomics")
+))]
+pub trait FromPtr: Atomic {
+    /// Creates a new atomic type from a pointer.
+    ///     
+    /// # Safety
+    ///
+    /// * `ptr` must be aligned to `align_of::<Self>()` (note that on some platforms this can
+    ///   be bigger than `align_of::<Self::Type>()`).
+    /// * `ptr` must be [valid] for both reads and writes for the whole lifetime `'a`.
+    /// * You must adhere to the [Memory model for atomic accesses]. In particular, it is not
+    ///   allowed to mix atomic and non-atomic accesses, or atomic accesses of different sizes,
+    ///   without synchronization.
+    unsafe fn from_ptr<'a>(ptr: *mut Self::Type) -> &'a Self;
+}
+
 #[cfg(feature = "atomic_from_mut")]
 /// Get atomic access to mutable atomic type or slice.
 pub trait FromMut: Atomic
@@ -414,12 +417,16 @@ macro_rules! impl_atomic {
         )*
 
     };
-    ($atomic:ident < $param:ident >) => {
+    ($atomic:ident < $param:ident > ; $( $rest:tt ),*) => {
         impl<$param> Atomic for $atomic <$param> {
             type Type = *mut $param;
 
             impl_atomic!(__impl atomic_methods $atomic);
         }
+
+        $(
+            impl_atomic!(__impl $rest $atomic <$param>);
+        )*
     };
     (__loom $atomic:ident < $param:ident >) => {
         impl<$param> Atomic for loom::sync::atomic::$atomic <$param> {
@@ -440,14 +447,6 @@ macro_rules! impl_atomic {
         #[inline(always)]
         fn new(v: Self::Type) -> Self {
             Self::new(v)
-        }
-
-        #[cfg(all(
-            any(feature = "atomic_from_ptr", feature = "since_1_75_0"),
-            not(feature = "loom_atomics")
-        ))]
-        unsafe fn from_ptr<'a>(ptr: *mut Self::Type) -> &'a Self {
-            Self::from_ptr(ptr)
         }
 
         #[cfg(all(
@@ -659,6 +658,30 @@ macro_rules! impl_atomic {
         }
     };
 
+    (__impl from_ptr $atomic:path : $primitive:ty) => {
+        #[cfg(all(
+            any(feature = "atomic_from_ptr", feature = "since_1_75_0"),
+            not(feature = "loom_atomics")
+        ))]
+        impl FromPtr for $atomic {
+            unsafe fn from_ptr<'a>(ptr: *mut Self::Type) -> &'a Self {
+                Self::from_ptr(ptr)
+            }
+        }
+    };
+
+    (__impl from_ptr $atomic:ident < $param:ident >) => {
+        #[cfg(all(
+            any(feature = "atomic_from_ptr", feature = "since_1_75_0"),
+            not(feature = "loom_atomics")
+        ))]
+        impl < $param > FromPtr for $atomic < $param > {
+            unsafe fn from_ptr<'a>(ptr: *mut Self::Type) -> &'a Self {
+                Self::from_ptr(ptr)
+            }
+        }
+    };
+
     (__impl as_ptr $atomic:path : $primitive:ty) => {
         #[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
         impl AsPtr for $atomic {
@@ -747,14 +770,12 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(any(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_has_atomic = "ptr"))] {
-        impl_atomic!(AtomicIsize: isize; bitwise, numops, as_ptr, from_mut);
-        impl_atomic!(AtomicUsize: usize; bitwise, numops, as_ptr, from_mut);
-        impl_atomic!(AtomicPtr<T>);
+        impl_atomic!(AtomicIsize: isize; bitwise, numops, as_ptr, from_ptr, from_mut);
+        impl_atomic!(AtomicUsize: usize; bitwise, numops, as_ptr, from_ptr, from_mut);
+        impl_atomic!(AtomicPtr<T>; as_ptr, from_ptr, from_mut);
 
         #[cfg(any(feature = "since_1_53_0", feature = "loom_atomics"))]
         impl_atomic!(__impl fetch_update AtomicPtr<T>);
-        impl_atomic!(__impl as_ptr AtomicPtr<T>);
-        impl_atomic!(__impl from_mut AtomicPtr<T>);
     }
 }
 
@@ -774,8 +795,8 @@ mod integer_atomics {
                 )
             )
         ))] {
-            impl_atomic!(AtomicI8: i8; bitwise, numops, as_ptr, from_mut);
-            impl_atomic!(AtomicU8: u8; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicI8: i8; bitwise, numops, as_ptr, from_ptr, from_mut);
+            impl_atomic!(AtomicU8: u8; bitwise, numops, as_ptr, from_ptr, from_mut);
         }
     }
 
@@ -791,8 +812,8 @@ mod integer_atomics {
                 )
             )
         ))] {
-            impl_atomic!(AtomicI16: i16; bitwise, numops, as_ptr, from_mut);
-            impl_atomic!(AtomicU16: u16; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicI16: i16; bitwise, numops, as_ptr, from_ptr, from_mut);
+            impl_atomic!(AtomicU16: u16; bitwise, numops, as_ptr, from_ptr, from_mut);
         }
     }
 
@@ -804,8 +825,8 @@ mod integer_atomics {
                 any(target_pointer_width = "32", target_pointer_width = "64")
             )
         ))] {
-            impl_atomic!(AtomicI32: i32; bitwise, numops, as_ptr, from_mut);
-            impl_atomic!(AtomicU32: u32; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicI32: i32; bitwise, numops, as_ptr, from_ptr, from_mut);
+            impl_atomic!(AtomicU32: u32; bitwise, numops, as_ptr, from_ptr, from_mut);
         }
     }
 
@@ -814,8 +835,8 @@ mod integer_atomics {
             all(any(feature = "use_target_has_atomic", feature = "since_1_60_0"), target_has_atomic = "64"),
             all(not(any(feature = "use_target_has_atomic", feature = "since_1_60_0")), target_pointer_width = "64")
         ))] {
-            impl_atomic!(AtomicI64: i64; bitwise, numops, as_ptr, from_mut);
-            impl_atomic!(AtomicU64: u64; bitwise, numops, as_ptr, from_mut);
+            impl_atomic!(AtomicI64: i64; bitwise, numops, as_ptr, from_ptr, from_mut);
+            impl_atomic!(AtomicU64: u64; bitwise, numops, as_ptr, from_ptr, from_mut);
         }
     }
 }

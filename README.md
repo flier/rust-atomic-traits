@@ -6,7 +6,7 @@ The traits for generic atomic operations in Rust.
 
 The crate is tested for stable and nightly compiler.
 
-Current MSRV is `1.32.0`.
+Current MSRV is `1.34.0`.
 
 ## Usage
 
@@ -14,7 +14,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-atomic-traits = "0.3"
+atomic-traits = "0.4"
 ```
 
 and this to your crate root:
