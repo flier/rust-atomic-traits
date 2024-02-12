@@ -47,13 +47,14 @@ jobs:
             experimental: true
             args:
               - --all-features
-    env:
-      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+      - if: startsWith(matrix.rust, '1.45')
+        run: |
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> $GITHUB_ENV
       - run: |
           cargo test -v ${{ matrix.args }}
 
