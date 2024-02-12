@@ -64,6 +64,18 @@ pub trait Atomic {
     fn new(v: Self::Type) -> Self;
 
     /// Returns a mutable reference to the underlying type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let mut some_bool = AtomicBool::new(true);
+    /// assert_eq!(*Atomic::get_mut(&mut some_bool), true);
+    /// *Atomic::get_mut(&mut some_bool) = false;
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::SeqCst), false);
+    /// ```
     #[cfg(all(
         any(feature = "atomic_access", feature = "since_1_15_0"),
         not(feature = "loom_atomics")
@@ -71,6 +83,16 @@ pub trait Atomic {
     fn get_mut(&mut self) -> &mut Self::Type;
 
     /// Consumes the atomic and returns the contained value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::AtomicBool;
+    /// use atomic_traits::Atomic;
+    ///
+    /// let some_bool = AtomicBool::new(true);
+    /// assert_eq!(Atomic::into_inner(some_bool), true);
+    /// ```
     #[cfg(all(
         any(feature = "atomic_access", feature = "since_1_15_0"),
         not(feature = "loom_atomics")
@@ -78,17 +100,67 @@ pub trait Atomic {
     fn into_inner(self) -> Self::Type;
 
     /// Loads a value from the atomic type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let some_bool = AtomicBool::new(true);
+    ///
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::Relaxed), true);
+    /// ```
     fn load(&self, order: Ordering) -> Self::Type;
 
     /// Stores a value into the atomic type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let some_bool = AtomicBool::new(true);
+    ///
+    /// Atomic::store(&some_bool, false, Ordering::Relaxed);
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::Relaxed), false);
+    /// ```
     fn store(&self, val: Self::Type, order: Ordering);
 
     /// Stores a value into the atomic type, returning the previous value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let some_bool = AtomicBool::new(true);
+    ///
+    /// assert_eq!(Atomic::swap(&some_bool, false, Ordering::Relaxed), true);
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::Relaxed), false);
+    /// ```
     fn swap(&self, val: Self::Type, order: Ordering) -> Self::Type;
 
     /// Stores a value into the atomic type if the current value is the same as the `current` value.
     ///
     /// The return value is always the previous value. If it is equal to `current`, then the value was updated.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let some_bool = AtomicBool::new(true);
+    ///
+    /// assert_eq!(Atomic::compare_and_swap(&some_bool, true, false, Ordering::Relaxed), true);
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::Relaxed), false);
+    ///
+    /// assert_eq!(Atomic::compare_and_swap(&some_bool, true, true, Ordering::Relaxed), false);
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::Relaxed), false);
+    /// ```
     #[cfg_attr(
         feature = "since_1_50_0",
         deprecated = "Use `compare_exchange` or `compare_exchange_weak` instead"
@@ -100,6 +172,31 @@ pub trait Atomic {
     ///
     /// The return value is a result indicating whether the new value was written and containing the previous value.
     /// On success this value is guaranteed to be equal to `current`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let some_bool = AtomicBool::new(true);
+    ///
+    /// assert_eq!(Atomic::compare_exchange(&some_bool,
+    ///                                      true,
+    ///                                      false,
+    ///                                      Ordering::Acquire,
+    ///                                      Ordering::Relaxed),
+    ///            Ok(true));
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::Relaxed), false);
+    ///
+    /// assert_eq!(Atomic::compare_exchange(&some_bool,
+    ///                                     true,
+    ///                                     true,
+    ///                                     Ordering::SeqCst,
+    ///                                     Ordering::Acquire),
+    ///            Err(false));
+    /// assert_eq!(Atomic::load(&some_bool, Ordering::Relaxed), false);
+    /// ```
     #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
     fn compare_exchange(
         &self,
@@ -114,6 +211,24 @@ pub trait Atomic {
     /// Unlike `compare_exchange`, this function is allowed to spuriously fail even when the comparison succeeds,
     /// which can result in more efficient code on some platforms.
     /// The return value is a result indicating whether the new value was written and containing the previous value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use atomic_traits::Atomic;
+    ///
+    /// let val = AtomicBool::new(false);
+    ///
+    /// let new = true;
+    /// let mut old = Atomic::load(&val, Ordering::Relaxed);
+    /// loop {
+    ///     match Atomic::compare_exchange_weak(&val, old, new, Ordering::SeqCst, Ordering::Relaxed) {
+    ///         Ok(_) => break,
+    ///         Err(x) => old = x,
+    ///     }
+    /// }
+    /// ```
     #[cfg(any(feature = "extended_compare_and_swap", feature = "since_1_10_0"))]
     fn compare_exchange_weak(
         &self,
@@ -131,8 +246,7 @@ pub trait Atomic {
 cfg_if! {
     if #[cfg(all(any(feature = "atomic_nand", feature = "since_1_27_0"), not(feature = "loom_atomics")))] {
         /// The trait for types implementing atomic bitwise operations
-        pub trait Bitwise:
-            Atomic
+        pub trait Bitwise: Atomic
             + fetch::And<Type = <Self as Atomic>::Type>
             + fetch::Nand<Type = <Self as Atomic>::Type>
             + fetch::Or<Type = <Self as Atomic>::Type>
@@ -141,8 +255,7 @@ cfg_if! {
         }
     } else {
         /// The trait for types implementing atomic bitwise operations
-        pub trait Bitwise:
-            Atomic
+        pub trait Bitwise: Atomic
             + fetch::And<Type = <Self as Atomic>::Type>
             + fetch::Or<Type = <Self as Atomic>::Type>
             + fetch::Xor<Type = <Self as Atomic>::Type>
@@ -152,7 +265,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(feature = "loom_atomics"))] {
+    if #[cfg(feature = "loom_atomics")] {
         /// The trait for types implementing atomic numeric operations
         pub trait NumOps:
             Atomic
@@ -161,7 +274,7 @@ cfg_if! {
             + fetch::Update<Type = <Self as Atomic>::Type>
         {
         }
-    } else if #[cfg(any(feature = "since_1_45_0"))] {
+    } else if #[cfg(feature = "since_1_45_0")] {
         /// The trait for types implementing atomic numeric operations
         pub trait NumOps:
             Atomic
@@ -184,11 +297,11 @@ cfg_if! {
 }
 
 macro_rules! impl_atomic {
-    ($atomic:path : $primitive:ty ; $( $traits:tt ),*) => {
+    ($atomic:path : $primitive:ty ; $( $rest:tt ),*) => {
         impl_atomic!(__impl atomic $atomic : $primitive);
 
         $(
-            impl_atomic!(__impl $traits $atomic : $primitive);
+            impl_atomic!(__impl $rest $atomic : $primitive);
         )*
 
     };
@@ -357,25 +470,7 @@ macro_rules! impl_atomic {
             }
         }
 
-        cfg_if! {
-            if #[cfg(any(feature = "since_1_45_0", feature = "loom_atomics"))] {
-                impl $crate::fetch::Update for $atomic {
-                    type Type = $primitive;
-
-                    #[inline(always)]
-                    fn fetch_update<F>(
-                        &self,
-                        fetch_order: Ordering,
-                        set_order: Ordering,
-                        f: F,
-                    ) -> Result<Self::Type, Self::Type>
-                    where
-                        F: FnMut(Self::Type) -> Option<Self::Type> {
-                        Self::fetch_update(self, fetch_order, set_order, f)
-                    }
-                }
-            }
-        }
+        impl_atomic!(__impl fetch_update $atomic : $primitive);
 
         cfg_if! {
             if #[cfg(all(feature = "since_1_45_0", not(feature = "loom_atomics")))] {
@@ -399,6 +494,42 @@ macro_rules! impl_atomic {
             }
         }
     };
+
+    (__impl fetch_update $atomic:path : $primitive:ty) => {
+        cfg_if! {
+            if #[cfg(any(feature = "since_1_45_0", feature = "loom_atomics"))] {
+                impl $crate::fetch::Update for $atomic {
+                    type Type = $primitive;
+
+                    #[inline(always)]
+                    fn fetch_update<F>(
+                        &self,
+                        fetch_order: Ordering,
+                        set_order: Ordering,
+                        f: F,
+                    ) -> Result<Self::Type, Self::Type>
+                    where
+                        F: FnMut(Self::Type) -> Option<Self::Type> {
+                        Self::fetch_update(self, fetch_order, set_order, f)
+                    }
+                }
+            }
+        }
+    };
+
+    (__impl fetch_not $atomic:path : $primitive:ty) => {
+        cfg_if! {
+            if #[cfg(feature = "atomic_bool_fetch_not")] {
+                impl $crate::fetch::Not for $atomic {
+                    type Type = $primitive;
+
+                    fn fetch_not(&self, order: Ordering) -> Self::Type {
+                        Self::fetch_not(self, order)
+                    }
+                }
+            }
+        }
+    };
 }
 
 cfg_if! {
@@ -413,16 +544,7 @@ cfg_if! {
             )
         )
     ))] {
-        impl_atomic!(AtomicBool: bool; bitwise);
-
-        #[cfg(feature = "atomic_bool_fetch_not")]
-        impl fetch::Not for AtomicBool {
-            type Type = bool;
-
-            fn fetch_not(&self, order: Ordering) -> Self::Type {
-                Self::fetch_not(self, order)
-            }
-        }
+        impl_atomic!(AtomicBool: bool; bitwise, fetch_update, fetch_not);
     }
 }
 

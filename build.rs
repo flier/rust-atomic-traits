@@ -29,6 +29,10 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"since_1_50_0\""); // extended_compare_and_swap deprecated
     }
 
+    if version.semver >= Version::new(1, 53, 0) {
+        println!("cargo:rustc-cfg=feature=\"since_1_53_0\""); // fetch_update for AtomicBool and AtomicPtr
+    }
+
     if version.semver >= Version::new(1, 60, 0) {
         println!("cargo:rustc-cfg=feature=\"since_1_60_0\""); // target_has_atomic
     }
