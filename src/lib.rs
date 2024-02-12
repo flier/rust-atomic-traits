@@ -490,6 +490,8 @@ mod integer_atomics {
 mod loom_atomics {
     extern crate loom;
 
+    use super::*;
+
     cfg_if! {
         if #[cfg(any(
             all(feature = "use_target_has_atomic", target_has_atomic = "8"),
