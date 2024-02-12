@@ -17,7 +17,6 @@ travis-ci = { repository = "flier/rust-atomic-traits", branch = "master" }
 default = []
 atomic_access = []
 atomic_as_ptr = []
-atomic_from_mut = []
 atomic_from_ptr = []
 atomic_min_max = []
 atomic_mut_ptr = []
@@ -25,7 +24,8 @@ extended_compare_and_swap = []
 integer_atomics = []
 loom_atomics = ["loom"]
 
-unstable = ["atomic_bool_fetch_not"]
+unstable = ["atomic_from_mut", "atomic_bool_fetch_not"]
+atomic_from_mut = []
 atomic_bool_fetch_not = []
 
 [dependencies]
