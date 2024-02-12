@@ -13,8 +13,14 @@ readme = "README.md"
 [badges]
 travis-ci = { repository = "flier/rust-atomic-traits", branch = "master" }
 
+[features]
+default = []
+loom_atomics = ["loom"]
+
 [dependencies]
 cfg-if = "1"
+
+loom = { version = "0.5", optional = true }
 
 [build-dependencies]
 rustc_version = "0.4"

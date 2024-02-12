@@ -63,11 +63,17 @@ pub trait Atomic {
     fn new(v: Self::Type) -> Self;
 
     /// Returns a mutable reference to the underlying type.
-    #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
+    #[cfg(all(
+        any(feature = "atomic_access", feature = "since_1_15_0"),
+        not(feature = "loom_atomics")
+    ))]
     fn get_mut(&mut self) -> &mut Self::Type;
 
     /// Consumes the atomic and returns the contained value.
-    #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
+    #[cfg(all(
+        any(feature = "atomic_access", feature = "since_1_15_0"),
+        not(feature = "loom_atomics")
+    ))]
     fn into_inner(self) -> Self::Type;
 
     /// Loads a value from the atomic type.
@@ -122,7 +128,7 @@ pub trait Atomic {
 }
 
 cfg_if! {
-    if #[cfg(any(feature = "atomic_nand", feature = "since_1_27_0"))] {
+    if #[cfg(all(any(feature = "atomic_nand", feature = "since_1_27_0"), not(feature = "loom_atomics")))] {
         /// The trait for types implementing atomic bitwise operations
         pub trait Bitwise:
             Atomic
@@ -145,7 +151,16 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(feature = "since_1_45_0"))] {
+    if #[cfg(any(feature = "loom_atomics"))] {
+        /// The trait for types implementing atomic numeric operations
+        pub trait NumOps:
+            Atomic
+            + fetch::Add<Type = <Self as Atomic>::Type>
+            + fetch::Sub<Type = <Self as Atomic>::Type>
+            + fetch::Update<Type = <Self as Atomic>::Type>
+        {
+        }
+    } else if #[cfg(any(feature = "since_1_45_0"))] {
         /// The trait for types implementing atomic numeric operations
         pub trait NumOps:
             Atomic
@@ -168,7 +183,7 @@ cfg_if! {
 }
 
 macro_rules! impl_atomic {
-    ($atomic:ident : $primitive:ty ; $( $traits:tt ),*) => {
+    ($atomic:path : $primitive:ty ; $( $traits:tt ),*) => {
         impl_atomic!(__impl atomic $atomic : $primitive);
 
         $(
@@ -183,8 +198,14 @@ macro_rules! impl_atomic {
             impl_atomic!(__impl atomic_methods $atomic);
         }
     };
+    (__loom $atomic:ident < $param:ident >) => {
+        impl<$param> Atomic for loom::sync::atomic::$atomic <$param> {
+            type Type = *mut $param;
 
-    (__impl atomic $atomic:ident : $primitive:ty) => {
+            impl_atomic!(__impl atomic_methods loom::sync::atomic::$atomic);
+        }
+    };
+    (__impl atomic $atomic:path : $primitive:ty) => {
         impl Atomic for $atomic {
             type Type = $primitive;
 
@@ -192,19 +213,25 @@ macro_rules! impl_atomic {
         }
     };
 
-    (__impl atomic_methods $atomic:ident) => {
+    (__impl atomic_methods $atomic:path) => {
         #[inline(always)]
         fn new(v: Self::Type) -> Self {
             Self::new(v)
         }
 
-        #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
+        #[cfg(all(
+            any(feature = "atomic_access", feature = "since_1_15_0"),
+            not(feature = "loom_atomics")
+        ))]
         #[inline(always)]
         fn get_mut(&mut self) -> &mut Self::Type {
             Self::get_mut(self)
         }
 
-        #[cfg(any(feature = "atomic_access", feature = "since_1_15_0"))]
+        #[cfg(all(
+            any(feature = "atomic_access", feature = "since_1_15_0"),
+            not(feature = "loom_atomics")
+        ))]
         #[inline(always)]
         fn into_inner(self) -> Self::Type {
             Self::into_inner(self)
@@ -267,7 +294,7 @@ macro_rules! impl_atomic {
         }
     };
 
-    (__impl bitwise $atomic:ident : $primitive:ty) => {
+    (__impl bitwise $atomic:path : $primitive:ty) => {
         impl Bitwise for $atomic {}
 
         impl $crate::fetch::And for $atomic {
@@ -279,7 +306,7 @@ macro_rules! impl_atomic {
             }
         }
 
-        #[cfg(any(feature = "atomic_nand", feature = "since_1_27_0"))]
+        #[cfg(all(any(feature = "atomic_nand", feature = "since_1_27_0"), not(feature = "loom_atomics")))]
         impl $crate::fetch::Nand for $atomic {
             type Type = $primitive;
 
@@ -308,7 +335,7 @@ macro_rules! impl_atomic {
         }
     };
 
-    (__impl numops $atomic:ident : $primitive:ty) => {
+    (__impl numops $atomic:path : $primitive:ty) => {
         impl NumOps for $atomic {}
 
         impl $crate::fetch::Add for $atomic {
@@ -330,7 +357,7 @@ macro_rules! impl_atomic {
         }
 
         cfg_if! {
-            if #[cfg(any(feature = "since_1_45_0"))] {
+            if #[cfg(any(feature = "since_1_45_0", feature = "loom_atomics"))] {
                 impl $crate::fetch::Update for $atomic {
                     type Type = $primitive;
 
@@ -346,7 +373,11 @@ macro_rules! impl_atomic {
                         Self::fetch_update(self, fetch_order, set_order, f)
                     }
                 }
+            }
+        }
 
+        cfg_if! {
+            if #[cfg(all(feature = "since_1_45_0", not(feature = "loom_atomics")))] {
                 impl $crate::fetch::Max for $atomic {
                     type Type = $primitive;
 
@@ -394,4 +425,24 @@ mod integer_atomics {
     impl_atomic!(AtomicU32: u32; bitwise, numops);
     #[cfg(target_has_atomic = "64")]
     impl_atomic!(AtomicU64: u64; bitwise, numops);
+}
+
+cfg_if! {
+    if #[cfg(feature = "loom_atomics")] {
+        extern crate loom;
+
+        impl_atomic!(loom::sync::atomic::AtomicBool: bool; bitwise);
+        impl_atomic!(loom::sync::atomic::AtomicIsize: isize; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicUsize: usize; bitwise, numops);
+        impl_atomic!(__loom AtomicPtr<T>);
+
+        impl_atomic!(loom::sync::atomic::AtomicI8: i8; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicI16: i16; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicI32: i32; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicI64: i64; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicU8: u8; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicU16: u16; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicU32: u32; bitwise, numops);
+        impl_atomic!(loom::sync::atomic::AtomicU64: u64; bitwise, numops);
+    }
 }
