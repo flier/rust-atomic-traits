@@ -189,14 +189,14 @@ cfg_if! {
             /// # Examples
             ///
             /// ```rust
-            /// use std::sync::atomic::{AtomicBool, Ordering};
+            /// use std::sync::atomic::{AtomicU8, Ordering};
             /// use atomic_traits::{Atomic, fetch};
             ///
-            /// let x = AtomicBool::new(false);
-            /// assert_eq!(fetch::Update::fetch_update(&x, Ordering::SeqCst, Ordering::SeqCst, |_| None), Err(false));
-            /// assert_eq!(fetch::Update::fetch_update(&x, Ordering::SeqCst, Ordering::SeqCst, |x| Some(!x)), Ok(false));
-            /// assert_eq!(fetch::Update::fetch_update(&x, Ordering::SeqCst, Ordering::SeqCst, |x| Some(!x)), Ok(true));
-            /// assert_eq!(Atomic::load(&x, Ordering::SeqCst), false);
+            /// let x = AtomicU8::new(7);
+            /// assert_eq!(fetch::Update::fetch_update(&x, Ordering::SeqCst, Ordering::SeqCst, |_| None), Err(7));
+            /// assert_eq!(fetch::Update::fetch_update(&x, Ordering::SeqCst, Ordering::SeqCst, |x| Some(x + 1)), Ok(7));
+            /// assert_eq!(fetch::Update::fetch_update(&x, Ordering::SeqCst, Ordering::SeqCst, |x| Some(x + 1)), Ok(8));
+            /// assert_eq!(Atomic::load(&x, Ordering::SeqCst), 9);
             /// ```
             fn fetch_update<F>(
                 &self,
