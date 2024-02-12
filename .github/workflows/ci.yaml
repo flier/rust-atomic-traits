@@ -28,7 +28,7 @@ jobs:
         args:
           - --all-features
           - --no-default-features
-          - --no-default-features --features looloom_atomics
+          - --no-default-features --features loom_atomics
         include:
           - os: ubuntu-latest
             rust: 1.32.0 # rustc-version MSRV
