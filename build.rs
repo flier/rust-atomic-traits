@@ -40,4 +40,8 @@ fn main() {
     if version.semver >= Version::new(1, 70, 0) {
         println!("cargo:rustc-cfg=feature=\"since_1_70_0\""); // atomic_as_ptr
     }
+
+    if version.semver >= Version::new(1, 75, 0) {
+        println!("cargo:rustc-cfg=feature=\"since_1_75_0\""); // atomic_from_ptr
+    }
 }

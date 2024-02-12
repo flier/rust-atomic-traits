@@ -63,6 +63,22 @@ pub trait Atomic {
     /// Creates a new atomic type.
     fn new(v: Self::Type) -> Self;
 
+    /// Creates a new atomic type from a pointer.
+    ///     
+    /// # Safety
+    ///
+    /// * `ptr` must be aligned to `align_of::<Self>()` (note that on some platforms this can
+    ///   be bigger than `align_of::<Self::Type>()`).
+    /// * `ptr` must be [valid] for both reads and writes for the whole lifetime `'a`.
+    /// * You must adhere to the [Memory model for atomic accesses]. In particular, it is not
+    ///   allowed to mix atomic and non-atomic accesses, or atomic accesses of different sizes,
+    ///   without synchronization.
+    #[cfg(all(
+        any(feature = "atomic_from_ptr", feature = "since_1_75_0"),
+        not(feature = "loom_atomics")
+    ))]
+    unsafe fn from_ptr<'a>(ptr: *mut Self::Type) -> &'a Self;
+
     /// Returns a mutable reference to the underlying type.
     ///
     /// # Examples
@@ -238,9 +254,26 @@ pub trait Atomic {
         failure: Ordering,
     ) -> Result<Self::Type, Self::Type>;
 
-    /// Returns a mutable pointer to the underlying integer.
-    #[cfg(feature = "atomic_mut_ptr")]
-    fn as_mut_ptr(&self) -> *mut usize;
+    /// Returns a mutable pointer to the underlying type.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore (extern-declaration)
+    /// # fn main() {
+    /// use std::sync::atomic::AtomicBool;
+    /// use atomic_traits::Atomic;
+    ///
+    /// extern "C" {
+    ///     fn my_atomic_op(arg: *mut bool);
+    /// }
+    ///
+    /// let mut atomic = AtomicBool::new(true);
+    /// unsafe {
+    ///     my_atomic_op(Atomic::as_ptr(&atomic));
+    /// }
+    /// # }
+    #[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
+    fn as_ptr(&self) -> *mut Self::Type;
 }
 
 cfg_if! {
@@ -334,6 +367,14 @@ macro_rules! impl_atomic {
         }
 
         #[cfg(all(
+            any(feature = "atomic_from_ptr", feature = "since_1_75_0"),
+            not(feature = "loom_atomics")
+        ))]
+        unsafe fn from_ptr<'a>(ptr: *mut Self::Type) -> &'a Self {
+            Self::from_ptr(ptr)
+        }
+
+        #[cfg(all(
             any(feature = "atomic_access", feature = "since_1_15_0"),
             not(feature = "loom_atomics")
         ))]
@@ -401,10 +442,9 @@ macro_rules! impl_atomic {
             Self::compare_exchange_weak(self, current, new, success, failure)
         }
 
-        #[cfg(feature = "atomic_mut_ptr")]
-        #[inline(always)]
-        fn as_mut_ptr(&self) -> *mut usize {
-            Self::as_mut_ptr(self)
+        #[cfg(any(feature = "atomic_as_ptr", feature = "since_1_70_0"))]
+        fn as_ptr(&self) -> *mut Self::Type {
+            Self::as_ptr(self)
         }
     };
 
@@ -533,15 +573,12 @@ macro_rules! impl_atomic {
     };
 
     (__impl fetch_not $atomic:path : $primitive:ty) => {
-        cfg_if! {
-            if #[cfg(feature = "atomic_bool_fetch_not")] {
-                impl $crate::fetch::Not for $atomic {
-                    type Type = $primitive;
+        #[cfg(feature = "atomic_bool_fetch_not")]
+        impl $crate::fetch::Not for $atomic {
+            type Type = $primitive;
 
-                    fn fetch_not(&self, order: Ordering) -> Self::Type {
-                        Self::fetch_not(self, order)
-                    }
-                }
+            fn fetch_not(&self, order: Ordering) -> Self::Type {
+                Self::fetch_not(self, order)
             }
         }
     };
