@@ -30,6 +30,6 @@ fn main() {
     }
 
     if version.semver >= Version::new(1, 60, 0) {
-        println!("cargo:rustc-cfg=feature=\"use_target_has_atomic\""); // extended_compare_and_swap deprecated
+        println!("cargo:rustc-cfg=feature=\"use_target_has_atomic\""); // target_has_atomic
     }
 }
