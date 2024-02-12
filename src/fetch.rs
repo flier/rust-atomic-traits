@@ -16,7 +16,6 @@ pub trait And {
     /// # Examples
     ///
     /// ```
-    /// #![feature(atomic_bool_fetch_not)]
     /// use std::sync::atomic::{AtomicU8, Ordering};
     /// use atomic_traits::{Atomic, fetch};
     ///
@@ -43,7 +42,6 @@ pub trait Nand {
     /// # Examples
     ///
     /// ```
-    /// #![feature(atomic_bool_fetch_not)]
     /// use std::sync::atomic::{AtomicU8, Ordering};
     /// use atomic_traits::{Atomic, fetch};
     ///
@@ -70,7 +68,6 @@ pub trait Or {
     /// # Examples
     ///
     /// ```
-    /// #![feature(atomic_bool_fetch_not)]
     /// use std::sync::atomic::{AtomicU8, Ordering};
     /// use atomic_traits::{Atomic, fetch};
     ///
@@ -96,7 +93,6 @@ pub trait Xor {
     /// # Examples
     ///
     /// ```
-    /// #![feature(atomic_bool_fetch_not)]
     /// use std::sync::atomic::{AtomicU8, Ordering};
     /// use atomic_traits::{Atomic, fetch};
     ///
